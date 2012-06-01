@@ -7,13 +7,18 @@
  */
 
 package mypackage;
+import java.io.UnsupportedEncodingException;
 import java.net.UnknownHostException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Date;
 
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
+
+import sun.misc.BASE64Encoder;
 
 import com.mongodb.BasicDBObject;
 import com.mongodb.DB;
@@ -26,6 +31,112 @@ import com.mongodb.MongoException;
 public class Beershift {
 	
 	
+	@GET
+	@Path("/adduser/{userId}/{password}")	
+	public void adduser(@PathParam("userId") String userID, @PathParam("password") String password) {
+		
+	/*	Takes in userID and the beer as parameter and inserts into
+	 * 	MongoDB with the current Time 
+	 */
+
+		 try {
+			 
+
+		 Mongo mongo = new Mongo("localhost", 27017);
+		 DB db = mongo.getDB("beershift");
+		 DBCollection collection = db.getCollection("users");
+		 BasicDBObject document = new BasicDBObject();
+
+		 document.put("username", userID);
+		 document.put("password", encryptPassword(password,"SHA-1","UTF-8"));
+		 document.put("creation_date", new Date().toString());
+//encryptPassword(password,"SHA-1","UTF-8")
+		 collection.insert(document);
+		 
+		 } catch (UnknownHostException e) {
+		 e.printStackTrace();
+		 } catch (MongoException e) {
+		 e.printStackTrace();
+		 } catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		 }
+	
+
+	// TODO Auto-generated method stub
+	 private static  String encryptPassword(String plaintext,
+	            String algorithm, String encoding) throws Exception {
+	        MessageDigest msgDigest = null;
+	        String hashValue = null;
+	        try {
+	            msgDigest = MessageDigest.getInstance(algorithm);
+	            msgDigest.update(plaintext.getBytes(encoding));
+	            byte rawByte[] = msgDigest.digest();
+	            hashValue = (new BASE64Encoder()).encode(rawByte);
+	 
+	        } catch (NoSuchAlgorithmException e) {
+	            System.out.println("No Such Algorithm Exists");
+	        } catch (UnsupportedEncodingException e) {
+	            System.out.println("The Encoding Is Not Supported");
+	        }
+	        return hashValue;
+	    }
+
+	 @GET
+	 @Path("/authenticate/{userId}/{password}")	
+	 @Produces("application/json")
+	 public String authenticate(@PathParam("userId") String userID, @PathParam("password") String password) {
+	 	
+	 /*
+	  * 	Displays all the information present in MongoDB
+	  */
+
+	 	 String msg ="false";
+
+	 	 try {
+	 		 
+	 	 
+	 	 Mongo mongo = new Mongo("localhost", 27017);
+	 	 DB db = mongo.getDB("beershift");
+	 	 DBCollection collection = db.getCollection("users");
+	 	
+	 	 BasicDBObject searchQuery = new BasicDBObject();
+	 	 searchQuery.put("username", userID);
+
+	 	 BasicDBObject keys = new BasicDBObject();
+	 	 keys.put("password", 1);
+
+	 	 
+	 	 DBCursor cursor = collection.find(searchQuery,keys);
+	 	 
+	 	 while (cursor.hasNext()) {
+	 	// msg += cursor.next();
+	 	 BasicDBObject obj = (BasicDBObject) cursor.next();
+	     String result="";
+		result+= obj.getString("password");
+		if(result.equals(encryptPassword(password,"SHA-1","UTF-8")))
+		{
+			msg="true";
+		}
+
+	 	 }
+	 	
+	 	 } catch (UnknownHostException e) {
+	 	 e.printStackTrace();
+	 	 } catch (MongoException e) {
+	 	 e.printStackTrace();
+	 	 } catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	 	 
+	 	 return msg;
+	 	
+	 	 }
+	 	
+	 
 @GET
 @Path("/insert/{userId}/{beer}")	
 public void insert(@PathParam("userId") String userID, @PathParam("beer") String beer) {
