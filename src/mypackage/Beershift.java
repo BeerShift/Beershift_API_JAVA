@@ -5,6 +5,8 @@
  * Author					Comment														Modified
  * Hilay Khatri				Added show all beers, insert new beer drank					05-31-2012
  * Hilay Khatri				Added search beer, 	show beers drank by user				06-01-2012
+ * Ramana Malladi			Added authentication, add a new user						06-01-2012
+
  */
 
 package mypackage;
