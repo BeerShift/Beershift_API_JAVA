@@ -38,8 +38,8 @@ public class Beershift {
 	 
 	public String adduser(@PathParam("userId") String userID, @PathParam("password") String password) {
 		
-	/*	Takes in userID and the beer as parameter and inserts into
-	 * 	MongoDB with the current Time 
+	/*	
+	 * 	Adds a new username-password tuple to the database.
 	 */ 
 		Boolean userExists = false;
 		String msg ="failure-user already existes";
@@ -80,8 +80,7 @@ public class Beershift {
 	 	 document.put("username", userID);
 		 document.put("password", encryptPassword(password,"SHA-1","UTF-8"));
 		 document.put("creation_date", new Date().toString());
-	
-//encryptPassword(password,"SHA-1","UTF-8")
+
 		 collection.insert(document);
 		 }
 		
@@ -98,6 +97,7 @@ public class Beershift {
 	
 
 	// TODO Auto-generated method stub
+	/*This method encrypts the password using SHA-1 algorithm and UTF-8 encoding. */
 	 private static  String encryptPassword(String plaintext,
 	            String algorithm, String encoding) throws Exception {
 	        MessageDigest msgDigest = null;
@@ -116,13 +116,14 @@ public class Beershift {
 	        return hashValue;
 	    }
 
+	 
 	 @GET
 	 @Path("/authenticate/{userId}/{password}")	
 	 @Produces("application/json")
 	 public String authenticate(@PathParam("userId") String userID, @PathParam("password") String password) {
 	 	
 	 /*
-	  * 	Displays all the information present in MongoDB
+	  * This method authenticates the user
 	  */
 
 	 	 String msg ="false";
