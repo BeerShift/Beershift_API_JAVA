@@ -2,8 +2,9 @@
  * Beershift Webservices with Resteasy for Jboss
  * 
  * 
- * Author						Modified
- * Hilay Khatri					06-01-2012
+ * Author					Comment														Modified
+ * Hilay Khatri				Added show all beers, insert new beer drank					05-31-2012
+ * Hilay Khatri				Added search beer, 	show beers drank by user				06-01-2012
  */
 
 package mypackage;
@@ -198,9 +199,9 @@ public void insert(@PathParam("userId") String userID, @PathParam("beer") String
 	 }
 		 
 @GET
-@Path("/beers")
+@Path("/display")
 @Produces("application/json")
-public String display() {
+public String firehose() {
 	
 /*
  * 	Displays all the information present in MongoDB
@@ -216,8 +217,83 @@ public String display() {
 	 DBCollection collection = db.getCollection("data");
 	
 	 BasicDBObject searchQuery = new BasicDBObject();
-//	 searchQuery.put("username", "ravi");
 	 DBCursor cursor = collection.find();
+	 
+	 while (cursor.hasNext()) {
+	 msg += cursor.next();
+	 }
+	
+	 } catch (UnknownHostException e) {
+	 e.printStackTrace();
+	 } catch (MongoException e) {
+	 e.printStackTrace();
+	 }
+	 
+	 return msg;
+	
+	 }
+
+
+@GET
+@Path("/display/{name}/")
+@Produces("application/json")
+public String user_beer(@PathParam("name") String userID)
+{
+	
+/*
+ * 	Displays all the beers drank by user
+ */
+
+	 String msg ="";
+
+	 try {
+		 
+	 
+	 Mongo mongo = new Mongo("localhost", 27017);
+	 DB db = mongo.getDB("beershift");
+	 DBCollection collection = db.getCollection("data");
+	
+	 BasicDBObject searchQuery = new BasicDBObject();
+	 searchQuery.put("username", userID);
+	 DBCursor cursor = collection.find(searchQuery);
+	 
+	 while (cursor.hasNext()) {
+	 msg += cursor.next();
+	 }
+	
+	 } catch (UnknownHostException e) {
+	 e.printStackTrace();
+	 } catch (MongoException e) {
+	 e.printStackTrace();
+	 }
+	 
+	 return msg;
+	
+	 }
+	
+
+@GET
+@Path("/search/{name}/")
+@Produces("application/json")
+public String search_beer(@PathParam("name") String name)
+{
+	
+/*
+ * 	Displays all the beers which match the search Input
+ */
+
+	 String msg ="";
+
+	 try {
+		 
+	 
+	 Mongo mongo = new Mongo("localhost", 27017);
+	 DB db = mongo.getDB("beershift");
+	 DBCollection collection = db.getCollection("data");
+	
+	 BasicDBObject searchQuery = new BasicDBObject();
+	 searchQuery.put("beer",java.util.regex.Pattern.compile(name));
+	 DBCursor cursor = collection.find(searchQuery);
 	 
 	 while (cursor.hasNext()) {
 	 msg += cursor.next();
