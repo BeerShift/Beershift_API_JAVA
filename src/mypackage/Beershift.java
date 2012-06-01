@@ -72,10 +72,9 @@ public String display() {
 	 Mongo mongo = new Mongo("localhost", 27017);
 	 DB db = mongo.getDB("beershift");
 	 DBCollection collection = db.getCollection("data");
-	 BasicDBObject document = new BasicDBObject();
 	
 	 BasicDBObject searchQuery = new BasicDBObject();
-	 searchQuery.put("username", "ravi");
+//	 searchQuery.put("username", "ravi");
 	 DBCursor cursor = collection.find();
 	 
 	 while (cursor.hasNext()) {
