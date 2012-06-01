@@ -32,27 +32,58 @@ public class Beershift {
 	
 	
 	@GET
-	@Path("/adduser/{userId}/{password}")	
-	public void adduser(@PathParam("userId") String userID, @PathParam("password") String password) {
+	@Path("/adduser/{userId}/{password}")
+	@Produces("application/json")
+	 
+	public String adduser(@PathParam("userId") String userID, @PathParam("password") String password) {
 		
 	/*	Takes in userID and the beer as parameter and inserts into
 	 * 	MongoDB with the current Time 
-	 */
+	 */ 
+		Boolean userExists = false;
+		String msg ="failure-user already existes";
 
-		 try {
+		 try {	
 			 
-
+			 
+		
 		 Mongo mongo = new Mongo("localhost", 27017);
 		 DB db = mongo.getDB("beershift");
 		 DBCollection collection = db.getCollection("users");
 		 BasicDBObject document = new BasicDBObject();
+		 
+		 
+		 BasicDBObject searchQuery = new BasicDBObject();
+	 	 searchQuery.put("username", userID);
 
-		 document.put("username", userID);
+	 	 BasicDBObject keys = new BasicDBObject();
+	 	 keys.put("username", 1);
+
+	 	 
+	 	 DBCursor cursor = collection.find(searchQuery,keys);
+	 	 
+	 	 while (cursor.hasNext()) {
+	 	// msg += cursor.next();
+	 	 BasicDBObject obj = (BasicDBObject) cursor.next();
+	     String result="";
+		result+= obj.getString("username");
+		if(result.equals(userID))
+		{
+			userExists=true;
+			
+		}
+		}
+		
+		 if(userExists==false){
+			 msg ="Success-user created";
+	 	 document.put("username", userID);
 		 document.put("password", encryptPassword(password,"SHA-1","UTF-8"));
 		 document.put("creation_date", new Date().toString());
+	
 //encryptPassword(password,"SHA-1","UTF-8")
 		 collection.insert(document);
-		 
+		 }
+		
 		 } catch (UnknownHostException e) {
 		 e.printStackTrace();
 		 } catch (MongoException e) {
@@ -61,7 +92,7 @@ public class Beershift {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-
+		 return msg;
 		 }
 	
 
