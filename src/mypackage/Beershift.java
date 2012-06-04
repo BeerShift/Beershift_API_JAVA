@@ -10,13 +10,15 @@
  * 
  * Ramana Malladi			Added authentication, add a new user						06-01-2012
  * 
- * Hilay Khatri				Added Limit of 50 on result from query (beers), sort 		06-02-2012
+ * Hilay Khatri				Added Limit of 50 on result displaying beers, sort 			06-02-2012
  * 							by date
  * 
  */
 
 package mypackage;
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.net.MalformedURLException;
 import java.net.UnknownHostException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -36,8 +38,15 @@ import com.mongodb.DBCursor;
 import com.mongodb.Mongo;
 import com.mongodb.MongoException;
 
-@Path("/beershift")
+import java.io.*;
+import java.net.*;
+
+@Path("/api")
 public class Beershift {
+	
+	String pint_url = "http://api.brewerydb.com/v2/search";
+    String api_key= "2f1549c9d86ea5088379d278c0451822";
+    String type ="beer";
 	
 	
 	@GET
@@ -196,7 +205,7 @@ public String insert(@PathParam("userId") String userID, @PathParam("beer") Stri
 
 	 document.put("username", userID);
 	 document.put("beer", beer);
-	 document.put("date", date);
+	 document.put("date", new Date().toString());
 
 	 collection.insert(document);
 	 
@@ -212,15 +221,15 @@ public String insert(@PathParam("userId") String userID, @PathParam("beer") Stri
 	 }
 		 
 @GET
-@Path("/display")
+@Path("/firehose")
 @Produces("application/json")
 public String firehose() {
 	
 /*
- * 	Displays all the information present in MongoDB
+ * 	Displays all beers drank by all user
  */
 
-	 String msg ="";
+	 String msg ="[";
 
 	 try {
 		 
@@ -228,16 +237,17 @@ public String firehose() {
 	 Mongo mongo = new Mongo("localhost", 27017);
 	 DB db = mongo.getDB("beershift");
 	 DBCollection collection = db.getCollection("drank");
-	
-	 BasicDBObject searchQuery = new BasicDBObject();
 	 
 	 BasicDBObject sortOrder = new BasicDBObject();	 
 	 sortOrder.put("date", -1);
 	 
 	 DBCursor cursor = collection.find().limit(50).sort(sortOrder);
 	 
+	 if (cursor == null)
+		 return msg = "null";
+	 
 	 while (cursor.hasNext()) {
-	 msg += cursor.next();
+	 msg += cursor.next()+",";
 	 }
 	
 	 } catch (UnknownHostException e) {
@@ -246,13 +256,16 @@ public String firehose() {
 	 e.printStackTrace();
 	 }
 	 
+	 msg = msg.substring(0, msg.length() -1);
+	 msg += "]"; 
+	
 	 return msg;
 	
 	 }
 
 
 @GET
-@Path("/display/{name}/")
+@Path("/userbeers/{name}/openshift")
 @Produces("application/json")
 public String user_beer(@PathParam("name") String userID)
 {
@@ -261,7 +274,7 @@ public String user_beer(@PathParam("name") String userID)
  * 	Displays all the beers drank by user
  */
 
-	 String msg ="";
+	 String msg ="[";
 
 	 try {
 		 
@@ -271,15 +284,18 @@ public String user_beer(@PathParam("name") String userID)
 	 DBCollection collection = db.getCollection("drank");
 	 
 	 BasicDBObject sortOrder = new BasicDBObject();	 
-	 sortOrder.put("date", -1);
+	 sortOrder.put("when", -1);
 	
 	 BasicDBObject searchQuery = new BasicDBObject();	 
 	 searchQuery.put("username", userID);
 	 
 	 DBCursor cursor = collection.find(searchQuery).sort(sortOrder);
 	 
+	 if (cursor == null)
+		 return msg = "null";
+	 
 	 while (cursor.hasNext()) {
-	 msg += cursor.next();
+	 msg += cursor.next()+",";
 	 }
 	
 	 } catch (UnknownHostException e) {
@@ -288,47 +304,55 @@ public String user_beer(@PathParam("name") String userID)
 	 e.printStackTrace();
 	 }
 	 
+	 msg = msg.substring(0, msg.length() -1);
+	 msg += "]"; 
+	
 	 return msg;
 	
 	 }
 	
 
 @GET
-@Path("/search/{name}/")
+@Path("/beers/name/{name}/")
 @Produces("application/json")
 public String search_beer(@PathParam("name") String name)
 {
-	
+
 /*
- * 	Displays all the beers which match the search Input
- */
+  *     Displays all the beers which match the search Input
+  */
 
-	 String msg ="";
+      String RESTCall ="";
+      String res ="";
+      String result="";
 
-	 try {
-		 
-	 
-	 Mongo mongo = new Mongo("localhost", 27017);
-	 DB db = mongo.getDB("beershift");
-	 DBCollection collection = db.getCollection("drank");
-	
-	 BasicDBObject searchQuery = new BasicDBObject();
-	 searchQuery.put("beer",java.util.regex.Pattern.compile(name));
-	 DBCursor cursor = collection.find(searchQuery).limit(50);
-	 
-	 while (cursor.hasNext()) {
-	 msg += cursor.next();
-	 }
-	
-	 } catch (UnknownHostException e) {
-	 e.printStackTrace();
-	 } catch (MongoException e) {
-	 e.printStackTrace();
-	 }
-	 
-	 return msg;
-	
-	 }
-	
+      try {
+
+
+         RESTCall = pint_url + "?key=" +api_key + "&q=" + name + "&type=" +type;
+
+          	 URL url = new URL(RESTCall);
+
+             URLConnection conn = url.openConnection();
+
+             BufferedReader in = new BufferedReader(new
+             InputStreamReader(conn.getInputStream()));
+             System.out.println("1");
+
+             while ((res = in.readLine()) != null) {
+
+             result += res;
+
+      }
+     
+     } catch (IOException e) {
+         // TODO Auto-generated catch block
+         e.printStackTrace();
+     }
+
+      return result;
+
+      }
+
 
 }
