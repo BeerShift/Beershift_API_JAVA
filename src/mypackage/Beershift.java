@@ -3,10 +3,16 @@
  * 
  * 
  * Author					Comment														Modified
+ * 
  * Hilay Khatri				Added show all beers, insert new beer drank					05-31-2012
- * Hilay Khatri				Added search beer, 	show beers drank by user				06-01-2012
+ * 
+ * Hilay Khatri				Added search beer, show beers drank by user				06-01-2012
+ * 
  * Ramana Malladi			Added authentication, add a new user						06-01-2012
-
+ * 
+ * Hilay Khatri				Added Limit of 50 on result from query (beers), sort 		06-02-2012
+ * 							by date
+ * 
  */
 
 package mypackage;
@@ -172,24 +178,25 @@ public class Beershift {
 	 	 }
 	 	
 	 
+	 
 @GET
-@Path("/insert/{userId}/{beer}")	
-public void insert(@PathParam("userId") String userID, @PathParam("beer") String beer) {
+@Path("/insert/{userId}/{beer}/{date}")	
+public String insert(@PathParam("userId") String userID, @PathParam("beer") String beer, @PathParam("date") String date) {
 	
 /*	Takes in userID and the beer as parameter and inserts into
  * 	MongoDB with the current Time 
  */
-
+	
 	 try {
 
 	 Mongo mongo = new Mongo("localhost", 27017);
 	 DB db = mongo.getDB("beershift");
-	 DBCollection collection = db.getCollection("data");
+	 DBCollection collection = db.getCollection("drank");
 	 BasicDBObject document = new BasicDBObject();
 
 	 document.put("username", userID);
 	 document.put("beer", beer);
-	 document.put("date", new Date().toString());
+	 document.put("date", date);
 
 	 collection.insert(document);
 	 
@@ -198,6 +205,9 @@ public void insert(@PathParam("userId") String userID, @PathParam("beer") String
 	 } catch (MongoException e) {
 	 e.printStackTrace();
 	 }
+	 
+	 return "Record Inserted";
+	 
 
 	 }
 		 
@@ -217,10 +227,14 @@ public String firehose() {
 	 
 	 Mongo mongo = new Mongo("localhost", 27017);
 	 DB db = mongo.getDB("beershift");
-	 DBCollection collection = db.getCollection("data");
+	 DBCollection collection = db.getCollection("drank");
 	
 	 BasicDBObject searchQuery = new BasicDBObject();
-	 DBCursor cursor = collection.find();
+	 
+	 BasicDBObject sortOrder = new BasicDBObject();	 
+	 sortOrder.put("date", -1);
+	 
+	 DBCursor cursor = collection.find().limit(50).sort(sortOrder);
 	 
 	 while (cursor.hasNext()) {
 	 msg += cursor.next();
@@ -254,11 +268,15 @@ public String user_beer(@PathParam("name") String userID)
 	 
 	 Mongo mongo = new Mongo("localhost", 27017);
 	 DB db = mongo.getDB("beershift");
-	 DBCollection collection = db.getCollection("data");
+	 DBCollection collection = db.getCollection("drank");
+	 
+	 BasicDBObject sortOrder = new BasicDBObject();	 
+	 sortOrder.put("date", -1);
 	
-	 BasicDBObject searchQuery = new BasicDBObject();
+	 BasicDBObject searchQuery = new BasicDBObject();	 
 	 searchQuery.put("username", userID);
-	 DBCursor cursor = collection.find(searchQuery);
+	 
+	 DBCursor cursor = collection.find(searchQuery).sort(sortOrder);
 	 
 	 while (cursor.hasNext()) {
 	 msg += cursor.next();
@@ -292,11 +310,11 @@ public String search_beer(@PathParam("name") String name)
 	 
 	 Mongo mongo = new Mongo("localhost", 27017);
 	 DB db = mongo.getDB("beershift");
-	 DBCollection collection = db.getCollection("data");
+	 DBCollection collection = db.getCollection("drank");
 	
 	 BasicDBObject searchQuery = new BasicDBObject();
 	 searchQuery.put("beer",java.util.regex.Pattern.compile(name));
-	 DBCursor cursor = collection.find(searchQuery);
+	 DBCursor cursor = collection.find(searchQuery).limit(50);
 	 
 	 while (cursor.hasNext()) {
 	 msg += cursor.next();
