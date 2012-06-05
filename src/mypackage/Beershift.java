@@ -10,7 +10,7 @@
  * 
  * Ramana Malladi			Added authentication, add a new user						06-01-2012
  * 
- * Hilay Khatri				Added Limit of 50 on result displaying beers, sort 			06-02-2012
+ * Hilay Khatri				Added Limit of 50 on result displaying beers, sort 			06-04-2012
  * 							by date
  * 
  */
@@ -24,6 +24,8 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Date;
 
+import javax.ws.rs.FormParam;
+import javax.ws.rs.POST;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.GET;
@@ -41,7 +43,7 @@ import com.mongodb.MongoException;
 import java.io.*;
 import java.net.*;
 
-@Path("/api")
+@Path("/")
 public class Beershift {
 	
 	String pint_url = "http://api.brewerydb.com/v2/search";
@@ -188,10 +190,10 @@ public class Beershift {
 	 	
 	 
 	 
-@GET
-@Path("/insert/{userId}/{beer}/{date}")	
-public String insert(@PathParam("userId") String userID, @PathParam("beer") String beer, @PathParam("date") String date) {
-	
+@Path("beer")
+@POST
+public String drinkbeer(@FormParam("username") String userID, @FormParam("beerName") String beer, @FormParam("when") String when) {  
+
 /*	Takes in userID and the beer as parameter and inserts into
  * 	MongoDB with the current Time 
  */
@@ -205,7 +207,7 @@ public String insert(@PathParam("userId") String userID, @PathParam("beer") Stri
 
 	 document.put("username", userID);
 	 document.put("beer", beer);
-	 document.put("date", new Date().toString());
+	 document.put("date", when);
 
 	 collection.insert(document);
 	 
@@ -351,8 +353,6 @@ public String search_beer(@PathParam("name") String name)
      }
 
       return result;
-
-      }
-
+}
 
 }
