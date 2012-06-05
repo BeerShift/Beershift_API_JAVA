@@ -12,7 +12,10 @@
  * 
  * Hilay Khatri				Added Limit of 50 on result displaying beers, sort 			06-02-2012
  * 							by date
- *  Ramana Malladi			Added code to return http response codes					06-05-2012
+ * 
+ * Ramana Malladi			Added code to return http response codes					06-05-2012
+ * 
+ * Hilay Khatri				Modified drinkbeer to react on POST							06-05-2012
  * 
  */
 
