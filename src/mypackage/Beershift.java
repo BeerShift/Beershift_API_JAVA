@@ -10,8 +10,9 @@
  * 
  * Ramana Malladi			Added authentication, add a new user						06-01-2012
  * 
- * Hilay Khatri				Added Limit of 50 on result displaying beers, sort 			06-04-2012
+ * Hilay Khatri				Added Limit of 50 on result displaying beers, sort 			06-02-2012
  * 							by date
+ *  Ramana Malladi			Added code to return http response codes					06-05-2012
  * 
  */
 
@@ -30,6 +31,8 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
+import javax.ws.rs.core.Response;
+//import javax.ws.rs.core.Response;
 
 import sun.misc.BASE64Encoder;
 
@@ -43,6 +46,7 @@ import com.mongodb.MongoException;
 import java.io.*;
 import java.net.*;
 
+
 @Path("/")
 public class Beershift {
 	
@@ -55,7 +59,7 @@ public class Beershift {
 	@Path("/adduser/{userId}/{password}")
 	@Produces("application/json")
 	 
-	public String adduser(@PathParam("userId") String userID, @PathParam("password") String password) {
+	public Response adduser(@PathParam("userId") String userID, @PathParam("password") String password) {
 		
 	/*	
 	 * 	Adds a new username-password tuple to the database.
@@ -64,21 +68,17 @@ public class Beershift {
 		String msg ="failure-user already existes";
 
 		 try {	
-			 
-			 
-		
+				
 		 Mongo mongo = new Mongo("localhost", 27017);
 		 DB db = mongo.getDB("beershift");
 		 DBCollection collection = db.getCollection("users");
 		 BasicDBObject document = new BasicDBObject();
-		 
-		 
+				 
 		 BasicDBObject searchQuery = new BasicDBObject();
 	 	 searchQuery.put("username", userID);
 
 	 	 BasicDBObject keys = new BasicDBObject();
 	 	 keys.put("username", 1);
-
 	 	 
 	 	 DBCursor cursor = collection.find(searchQuery,keys);
 	 	 
@@ -104,14 +104,14 @@ public class Beershift {
 		 }
 		
 		 } catch (UnknownHostException e) {
-		 e.printStackTrace();
+			 Response.status(500);
 		 } catch (MongoException e) {
-		 e.printStackTrace();
+			 Response.status(500);
 		 } catch (Exception e) {
 			// TODO Auto-generated catch block
-			e.printStackTrace();
+			 Response.status(500);
 		}
-		 return msg;
+		 return Response.status(200).entity(msg).build();
 		 }
 	
 
@@ -139,7 +139,7 @@ public class Beershift {
 	 @GET
 	 @Path("/authenticate/{userId}/{password}")	
 	 @Produces("application/json")
-	 public String authenticate(@PathParam("userId") String userID, @PathParam("password") String password) {
+	 public Response authenticate(@PathParam("userId") String userID, @PathParam("password") String password) {
 	 	
 	 /*
 	  * This method authenticates the user
@@ -176,15 +176,15 @@ public class Beershift {
 	 	 }
 	 	
 	 	 } catch (UnknownHostException e) {
-	 	 e.printStackTrace();
+	 	 Response.status(500);
 	 	 } catch (MongoException e) {
-	 	 e.printStackTrace();
+	 		Response.status(500);
 	 	 } catch (Exception e) {
 			// TODO Auto-generated catch block
-			e.printStackTrace();
+	 		Response.status(500);
 		}
 	 	 
-	 	 return msg;
+	 	return Response.status(200).entity(msg).build();
 	 	
 	 	 }
 	 	
@@ -192,40 +192,42 @@ public class Beershift {
 	 
 @Path("beer")
 @POST
-public String drinkbeer(@FormParam("username") String userID, @FormParam("beerName") String beer, @FormParam("when") String when) {  
+public Response drinkbeer(@FormParam("username") String userID, @FormParam("beerName") String beer, @FormParam("when") String when) {
 
-/*	Takes in userID and the beer as parameter and inserts into
- * 	MongoDB with the current Time 
- */
-	
-	 try {
+/* Takes in userID and the beer as parameter and inserts into
+* MongoDB with the current Time
+*/
 
-	 Mongo mongo = new Mongo("localhost", 27017);
-	 DB db = mongo.getDB("beershift");
-	 DBCollection collection = db.getCollection("drank");
-	 BasicDBObject document = new BasicDBObject();
+try {
 
-	 document.put("username", userID);
-	 document.put("beer", beer);
-	 document.put("date", when);
+Mongo mongo = new Mongo("localhost", 27017);
+DB db = mongo.getDB("beershift");
+DBCollection collection = db.getCollection("drank");
+BasicDBObject document = new BasicDBObject();
 
-	 collection.insert(document);
-	 
-	 } catch (UnknownHostException e) {
-	 e.printStackTrace();
-	 } catch (MongoException e) {
-	 e.printStackTrace();
-	 }
-	 
-	 return "Record Inserted";
-	 
+document.put("username", userID);
+document.put("beer", beer);
+document.put("date", when);
 
-	 }
+collection.insert(document);
+
+} catch (UnknownHostException e) {
+Response.status(500);
+} catch (MongoException e) {
+	Response.status(500);
+}
+
+return Response.status(200).entity("Inserted").build();
+
+
+}
+
+
 		 
 @GET
 @Path("/firehose")
 @Produces("application/json")
-public String firehose() {
+public Response firehose() {
 	
 /*
  * 	Displays all beers drank by all user
@@ -245,37 +247,42 @@ public String firehose() {
 	 
 	 DBCursor cursor = collection.find().limit(50).sort(sortOrder);
 	 
-	 if (cursor == null)
-		 return msg = "null";
-	 
+	 if(cursor.hasNext() == false)
+	 {
+	 msg = "null";
+	 return Response.status(200).entity(msg).build();
+	 }
+	  
 	 while (cursor.hasNext()) {
 	 msg += cursor.next()+",";
 	 }
 	
 	 } catch (UnknownHostException e) {
-	 e.printStackTrace();
+		 Response.status(500);
 	 } catch (MongoException e) {
-	 e.printStackTrace();
+		 Response.status(500);
 	 }
 	 
 	 msg = msg.substring(0, msg.length() -1);
 	 msg += "]"; 
 	
-	 return msg;
+	 return Response.status(200).entity(msg).build();
+
 	
 	 }
 
 
 @GET
-@Path("/userbeers/{name}/openshift")
+@Path("/userbeers/username/{name}")
 @Produces("application/json")
-public String user_beer(@PathParam("name") String userID)
+public Response user_beer(@PathParam("name") String userID)
 {
 	
-/*
+/*  
  * 	Displays all the beers drank by user
  */
-
+	
+	
 	 String msg ="[";
 
 	 try {
@@ -293,23 +300,28 @@ public String user_beer(@PathParam("name") String userID)
 	 
 	 DBCursor cursor = collection.find(searchQuery).sort(sortOrder);
 	 
-	 if (cursor == null)
-		 return msg = "null";
+	 if(cursor.hasNext() == false)
+		 {
+		 msg = "null";
+		 return Response.status(200).entity(msg).build();
+		 }
+		 	
 	 
 	 while (cursor.hasNext()) {
 	 msg += cursor.next()+",";
 	 }
 	
 	 } catch (UnknownHostException e) {
-	 e.printStackTrace();
+		 Response.status(500);
 	 } catch (MongoException e) {
-	 e.printStackTrace();
+		 Response.status(500);
 	 }
 	 
 	 msg = msg.substring(0, msg.length() -1);
+
 	 msg += "]"; 
 	
-	 return msg;
+	 return Response.status(200).entity(msg).build();
 	
 	 }
 	
@@ -317,7 +329,7 @@ public String user_beer(@PathParam("name") String userID)
 @GET
 @Path("/beers/name/{name}/")
 @Produces("application/json")
-public String search_beer(@PathParam("name") String name)
+public Response search_beer(@PathParam("name") String name)
 {
 
 /*
@@ -339,8 +351,7 @@ public String search_beer(@PathParam("name") String name)
 
              BufferedReader in = new BufferedReader(new
              InputStreamReader(conn.getInputStream()));
-             System.out.println("1");
-
+            
              while ((res = in.readLine()) != null) {
 
              result += res;
@@ -349,10 +360,12 @@ public String search_beer(@PathParam("name") String name)
      
      } catch (IOException e) {
          // TODO Auto-generated catch block
-         e.printStackTrace();
+    	 Response.status(500);
      }
 
-      return result;
-}
+      return Response.status(200).entity(result).build();
+
+      }
+
 
 }
