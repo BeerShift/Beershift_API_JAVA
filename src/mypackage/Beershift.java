@@ -30,6 +30,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Date;
 
+import javax.servlet.ServletException;
 import javax.ws.rs.FormParam;
 import javax.ws.rs.POST;
 import javax.ws.rs.PathParam;
@@ -58,26 +59,36 @@ public class Beershift {
 	String pint_url = "http://api.brewerydb.com/v2/search";
     String api_key= "2f1549c9d86ea5088379d278c0451822";
     String type ="beer";
-    DB db;
+    
+   
+   
+DB db;
     
     public Beershift()
     {
-    	
-    	
-		try {
-			
-			Mongo mongo;
-			mongo = new Mongo("localhost", 27017);
-			db = mongo.getDB("beershift");
-		} catch (UnknownHostException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (MongoException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		
+    
+    
+try {
+
+Mongo mongo;
+mongo = new Mongo("127.5.172.129", 27017);
+db = mongo.getDB("beershift");
+
+if (db.authenticate("admin", "9yEYIDrVb1ID".toCharArray())) {
+	  throw new MongoException("unable to authenticate");
+	}
+} catch (UnknownHostException e) {
+// TODO Auto-generated catch block
+e.printStackTrace();
+} catch (MongoException e) {
+// TODO Auto-generated catch block
+e.printStackTrace();
+}
+
     }
+
+		
+    
 	
 
 	@GET
@@ -220,23 +231,23 @@ public Response drinkbeer(@FormParam("username") String userID, @FormParam("beer
 * MongoDB with the current Time
 */
 
-try {
-
-
-DBCollection collection = db.getCollection("drank");
-BasicDBObject document = new BasicDBObject();
-
-document.put("username", userID);
-document.put("beer", beer);
-document.put("date", when);
-
-collection.insert(document);
-
-} catch (MongoException e) {
-	Response.status(500);
-}
-
-return Response.status(200).entity("Inserted").build();
+	try {
+	
+	
+	DBCollection collection = db.getCollection("drank");
+	BasicDBObject document = new BasicDBObject();
+	
+	document.put("username", userID);
+	document.put("beer", beer);
+	document.put("date", when);
+	
+	collection.insert(document);
+	
+	} catch (MongoException e) {
+		Response.status(500);
+	}
+	
+	return Response.status(200).entity("Inserted").build();
 
 
 }
